@@ -2,14 +2,17 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 
-	"echo-shopping/scripts/codegen/db"
-
 	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
+	"github.com/wvegtre/gogen-cli/convertor"
+	"github.com/wvegtre/gogen-cli/convertor/config"
+	"github.com/wvegtre/tools-cli/tools/myfile/readfile"
 )
 
 func init() {
@@ -17,64 +20,67 @@ func init() {
 }
 
 func main() {
-	// 1. 连接数据库
-	p := inputForDBConnectParameter()
+	// 1. 读取配置、
+	c, err := loadConfigs()
+	if err != nil {
+		log.Println("loadConfigs failed, ", err)
+		os.Exit(0)
+	}
+	operator := convertor.NewMySQLDBConnect(c)
+	p := completeDBConnectConfig(c.Drivers)
 	//p := mockForDebug()
-	err := validator.New().Struct(&p)
+	err = validator.New().Struct(&p)
 	if err != nil {
 		log.Println("GenStructByDBFields Parameter validate failed, ", err)
 		os.Exit(0)
 	}
 	log.Println("input parse succeed, start running...")
-	err = p.Operator.GenStructByDBFields(p)
+	err = operator.GenStructByDBFields(p)
 	if err != nil {
 		log.Println("GenStructByDBFields Failed, err: ", err)
 		os.Exit(0)
 	}
-	err = p.Operator.GenServiceForDBStruct()
+	err = operator.GenServiceForDBStruct()
 	if err != nil {
 		log.Println("GenServiceForDBStruct Failed, err: ", err)
+		os.Exit(0)
+	}
+	err = operator.GenServerFunc()
+	if err != nil {
+		log.Println("GenServerFunc Failed, err: ", err)
 		os.Exit(0)
 	}
 	log.Println("end running. all filed output to target path.")
 }
 
-func inputForDBConnectParameter() db.GenParameter {
-	p := db.GenParameter{}
-	fmt.Print("Please enter your db driver: ")
-	driver := getInputLine()
-	// TODO 改成可选项
-	switch driver {
-	case "mysql":
-		p.Operator = db.NewMySQLDBConnect()
-	default:
-		fmt.Println("--- tips: selected mysql as default driver. ---")
-		p.Operator = db.NewMySQLDBConnect()
+func loadConfigs() (*config.GenConfig, error) {
+	result := readfile.Read("./gen/config/config.json")
+	if result.Error != nil {
+		return nil, errors.Wrap(result.Error, "read failed")
 	}
-	fmt.Print("Please enter your db user: ")
-	p.UserName = getInputLineWithDefault("mysql_user")
+	c := &config.GenConfig{}
+	err := json.Unmarshal(result.JSONDetail, c)
+	if err != nil {
+		return nil, errors.WithStack(err)
+	}
+	return c, nil
+}
+
+func completeDBConnectConfig(c config.GenConfigDrivers) convertor.GenDBCodeParameter {
+	p := convertor.GenDBCodeParameter{
+		UserName: c.Mysql.UserName,
+		IP:       c.Mysql.IP,
+		Port:     c.Mysql.Port,
+		Database: c.Mysql.DB,
+		Charset:  c.Mysql.Charset,
+	}
+	fmt.Println("--- tips: selected mysql as default driver. ---")
 	fmt.Print("Please enter your db password: ")
 	p.Password = getInputLine()
 	if p.Password == "" {
 		fmt.Println("!!! exit because password required")
 		os.Exit(0)
 	}
-	fmt.Print("Please enter your db ip: ")
-	p.IP = getInputLine()
-	fmt.Print("Please enter your db port: ")
-	p.Port = getInputLine()
-	if p.IP == "" || p.Port == "" {
-		domain := os.Getenv("mysql_domain")
-		arr := strings.Split(domain, ":")
-		p.IP = arr[0]
-		p.Port = arr[1]
-		fmt.Println("--- Find db ip or port empty, get from os env. ip:port -> ", p.IP, ":", p.Port, " ---")
-	}
-	fmt.Print("Please enter your database: ")
-	p.Database = getInputLineWithDefault("mysql_db")
-	// TODO 改成可选项
-	fmt.Println("Please enter target table")
-	p.TargetTable = getInputLine()
 	return p
 }
 
