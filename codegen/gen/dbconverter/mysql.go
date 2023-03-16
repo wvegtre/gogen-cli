@@ -7,11 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"echo-shopping/tools/array"
-
 	"github.com/go-playground/validator/v10"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
+	"github.com/wvegtre/tools-cli/tools/array"
 )
 
 //map for converting mysql type to golang types

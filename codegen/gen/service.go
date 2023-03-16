@@ -1,4 +1,4 @@
-package db
+package gen
 
 type ConnectOperator interface {
 	GenStructByDBFields(parameter GenParameter) error

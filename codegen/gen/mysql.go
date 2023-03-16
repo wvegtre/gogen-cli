@@ -1,12 +1,11 @@
-package db
+package gen
 
 import (
 	"strings"
 
-	"echo-shopping/scripts/codegen/tools/dbconverter"
-	"echo-shopping/scripts/codegen/tools/serviceconverter"
-
 	"github.com/pkg/errors"
+	"github.com/wvegtre/gogen-cli/gen/dbconverter"
+	"github.com/wvegtre/gogen-cli/gen/serviceconverter"
 )
 
 type MySQLDBConnect struct {
@@ -37,8 +36,8 @@ func (c *MySQLDBConnect) GenStructByDBFields(parameter GenParameter) error {
 	if parameter.Charset != "" {
 		dbconverter.WithCharset(parameter.Charset)
 	}
-	if len(parameter.TargetTable) > 0 {
-		tables := strings.Split(parameter.TargetTable, ",")
+	if len(parameter.TargetTables) > 0 {
+		tables := strings.Split(parameter.TargetTables, ",")
 		dbconverter.WithTables(tables)
 	}
 	groupMap, err := dbconverter.NewMySQLConverter(dc, options...).Run()
