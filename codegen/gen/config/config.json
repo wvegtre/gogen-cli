@@ -1,7 +1,6 @@
 {
   "output": {
-    "dir": "./output",
-    "group_in_one_file": true
+    "dir": "./output/"
   },
   "drivers": {
     "mysql": {

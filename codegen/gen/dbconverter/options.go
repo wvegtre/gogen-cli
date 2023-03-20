@@ -14,12 +14,6 @@ func WithEnableJsonTag(enableJsonTag bool) MySQLConfigOption {
 	}
 }
 
-func WithAllInOneFile(allInOneFile bool) MySQLConfigOption {
-	return func(config *mySQLConverterConfig) {
-		config.AllInOneFile = allInOneFile
-	}
-}
-
 func WithSaveDir(saveDir string) MySQLConfigOption {
 	return func(config *mySQLConverterConfig) {
 		config.SaveDir = saveDir
@@ -29,12 +23,6 @@ func WithSaveDir(saveDir string) MySQLConfigOption {
 func WithSaveFilePrefix(saveFilePrefix string) MySQLConfigOption {
 	return func(config *mySQLConverterConfig) {
 		config.SaveFilePrefix = saveFilePrefix
-	}
-}
-
-func WithSaveFileDefaultName(saveFileDefaultName string) MySQLConfigOption {
-	return func(config *mySQLConverterConfig) {
-		config.SaveFileDefaultName = saveFileDefaultName
 	}
 }
 

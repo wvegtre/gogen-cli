@@ -11,6 +11,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
 	"github.com/wvegtre/gogen-cli/gen"
+	"github.com/wvegtre/gogen-cli/gen/config"
 	"github.com/wvegtre/tools-cli/tools/myfile/readfile"
 )
 
@@ -25,7 +26,8 @@ func main() {
 		log.Println("loadConfigs failed, ", err)
 		os.Exit(0)
 	}
-	p := completeDBConnectParameter(c)
+	operator := gen.NewMySQLDBConnect(c)
+	p := completeDBConnectConfig(c.Drivers)
 	//p := mockForDebug()
 	err = validator.New().Struct(&p)
 	if err != nil {
@@ -33,12 +35,12 @@ func main() {
 		os.Exit(0)
 	}
 	log.Println("input parse succeed, start running...")
-	err = p.Operator.GenStructByDBFields(p)
+	err = operator.GenStructByDBFields(p)
 	if err != nil {
 		log.Println("GenStructByDBFields Failed, err: ", err)
 		os.Exit(0)
 	}
-	err = p.Operator.GenServiceForDBStruct()
+	err = operator.GenServiceForDBStruct()
 	if err != nil {
 		log.Println("GenServiceForDBStruct Failed, err: ", err)
 		os.Exit(0)
@@ -46,12 +48,12 @@ func main() {
 	log.Println("end running. all filed output to target path.")
 }
 
-func loadConfigs() (*GenConfig, error) {
-	result := readfile.Read("./config.json")
+func loadConfigs() (*config.GenConfig, error) {
+	result := readfile.Read("./gen/config/config.json")
 	if result.Error != nil {
 		return nil, errors.Wrap(result.Error, "read failed")
 	}
-	c := &GenConfig{}
+	c := &config.GenConfig{}
 	err := json.Unmarshal(result.JSONDetail, c)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -59,14 +61,13 @@ func loadConfigs() (*GenConfig, error) {
 	return c, nil
 }
 
-func completeDBConnectParameter(c *GenConfig) gen.GenParameter {
-	p := gen.GenParameter{
-		UserName:     c.Drivers.Mysql.UserName,
-		IP:           c.Drivers.Mysql.IP,
-		Port:         c.Drivers.Mysql.Port,
-		Database:     c.Drivers.Mysql.DB,
-		TargetTables: c.Drivers.Mysql.Tables,
-		Charset:      c.Drivers.Mysql.Charset,
+func completeDBConnectConfig(c config.GenConfigDrivers) gen.GenDBCodeParameter {
+	p := gen.GenDBCodeParameter{
+		UserName: c.Mysql.UserName,
+		IP:       c.Mysql.IP,
+		Port:     c.Mysql.Port,
+		Database: c.Mysql.DB,
+		Charset:  c.Mysql.Charset,
 	}
 	fmt.Println("--- tips: selected mysql as default driver. ---")
 	fmt.Print("Please enter your db password: ")

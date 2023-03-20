@@ -1,10 +1,14 @@
 package gen
 
+import "github.com/wvegtre/gogen-cli/gen/config"
+
 type ConnectOperator interface {
-	GenStructByDBFields(parameter GenParameter) error
+	GenStructByDBFields(parameter GenDBCodeParameter) error
 	GenServiceForDBStruct() error
 }
 
-func NewMySQLDBConnect() ConnectOperator {
-	return &MySQLDBConnect{}
+func NewMySQLDBConnect(config *config.GenConfig) ConnectOperator {
+	return &MySQLDBConnect{
+		Config: config,
+	}
 }

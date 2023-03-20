@@ -4,12 +4,13 @@ import (
 	"strings"
 
 	"github.com/pkg/errors"
+	"github.com/wvegtre/gogen-cli/gen/config"
 	"github.com/wvegtre/gogen-cli/gen/dbconverter"
 	"github.com/wvegtre/gogen-cli/gen/serviceconverter"
 )
 
 type MySQLDBConnect struct {
-
+	Config *config.GenConfig
 	// key: group_name, values include table_name and struct_name
 	groupMap map[string][]dbconverter.StructContentDetail
 }
@@ -20,7 +21,7 @@ type MySQLDBConnect struct {
 	2. query mysql table fields
 	3. gen struct by table fields
 */
-func (c *MySQLDBConnect) GenStructByDBFields(parameter GenParameter) error {
+func (c *MySQLDBConnect) GenStructByDBFields(parameter GenDBCodeParameter) error {
 	dc := dbconverter.DBConfig{
 		UserName: parameter.UserName,
 		Password: parameter.Password,
@@ -29,15 +30,15 @@ func (c *MySQLDBConnect) GenStructByDBFields(parameter GenParameter) error {
 		Database: parameter.Database,
 	}
 	options := []dbconverter.MySQLConfigOption{
-		dbconverter.WithSaveDir("./output/"),
-		dbconverter.WithSaveFileDefaultName("model"),
-		//dbconverter.WithAllInOneFile(false),
+		dbconverter.WithSaveDir(c.Config.Output.Dir + "database/"),
+		//dbconverter.WithSaveFileDefaultName("model"),
+		//dbconverter.WithAllInOneFile(parameter.GroupInOneFile),
 	}
 	if parameter.Charset != "" {
 		dbconverter.WithCharset(parameter.Charset)
 	}
-	if len(parameter.TargetTables) > 0 {
-		tables := strings.Split(parameter.TargetTables, ",")
+	if len(c.Config.Drivers.Mysql.Tables) > 0 {
+		tables := strings.Split(c.Config.Drivers.Mysql.Tables, ",")
 		dbconverter.WithTables(tables)
 	}
 	groupMap, err := dbconverter.NewMySQLConverter(dc, options...).Run()
@@ -51,9 +52,20 @@ func (c *MySQLDBConnect) GenStructByDBFields(parameter GenParameter) error {
 
 func (c *MySQLDBConnect) GenServiceForDBStruct() error {
 	options := []serviceconverter.ServiceGenConfigOption{
-		serviceconverter.WithSaveDir("./output/"),
+		serviceconverter.WithSaveDir(c.Config.Output.Dir + "database/"),
 		serviceconverter.WithSaveFileDefaultName("service"),
-		//dbconverter.WithAllInOneFile(false),
+	}
+	err := serviceconverter.NewServiceConverter(options...).Run(c.groupMap)
+	if err != nil {
+		return errors.WithStack(err)
+	}
+	return nil
+}
+
+func (c *MySQLDBConnect) GenServerFunc() error {
+	options := []serviceconverter.ServiceGenConfigOption{
+		serviceconverter.WithSaveDir(c.Config.Output.Dir + "database/"),
+		serviceconverter.WithSaveFileDefaultName("service"),
 	}
 	err := serviceconverter.NewServiceConverter(options...).Run(c.groupMap)
 	if err != nil {

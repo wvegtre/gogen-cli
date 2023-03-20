@@ -1,11 +1,11 @@
-package main
+package config
 
 type GenConfig struct {
-	Output  Output  `json:"output"`
-	Drivers Drivers `json:"drivers"`
+	Output  Output           `json:"output"`
+	Drivers GenConfigDrivers `json:"drivers"`
 }
 
-type Drivers struct {
+type GenConfigDrivers struct {
 	Mysql Mysql `json:"mysql"`
 }
 
@@ -19,6 +19,6 @@ type Mysql struct {
 }
 
 type Output struct {
-	Dir            string `json:"dir"`
-	GroupInOneFile bool   `json:"group_in_one_file"`
+	Dir string `json:"dir"`
+	//GroupInOneFile bool   `json:"group_in_one_file"`
 }
