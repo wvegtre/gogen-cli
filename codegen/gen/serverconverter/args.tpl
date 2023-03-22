@@ -1,31 +1,31 @@
 {{define "convert_args"}}
-type List{{.table}}Args struct {
-{{range $i, $v := .args_slice}}
-    {{$v}}
+type List{{.service_prefix}}Args struct {
+{{range $i, $v := .args_slice}}{{$v}}
 {{end}}
 }
 
-func (a List{{.table}}Args) toDbQueryArgs() map[string]interface{} {
+func (a List{{.service_prefix}}Args) toDbQueryArgs() map[string]interface{} {
 	m := make(map[string]interface{}, 0)
-	{{range $k, $v := .args_map}}
-        m[{{$k}}] = {{$v}}
-    {{end}}
+	{{range $k, $v := .args_map}}m["{{$k}}"] = a.{{$v}}
+	{{end}}
 	return m
 }
 
-type Create{{.table}}Args struct {
-{{range $i, $v := .args_slice}}
-    {{if eq $v "id"}}{{else}} {{$v}} {{end}}
+type Create{{.service_prefix}}Args struct {
+{{range $i, $v := .args_slice}}{{if eq $v "Id"}}{{else}} {{$v}} {{end}}
 {{end}}
 }
 
-type Update{{.table}}Args struct {
-{{range $i, $v := .args_slice}}
-    {{$v}}
+type Update{{.service_prefix}}Args struct {
+{{range $i, $v := .args_slice}}{{$v}}
 {{end}}
 }
 
-func (a Update{{.table}}Args) toDbUpdateArgs() {{.group}}.{{.table}}Model {
-	// TODO service args to db args
-	return user.UserModel{}
+func (a Update{{.service_prefix}}Args) toDbUpdateArgs() {{.group}}.{{.model}} {
+	return {{.group}}.{{.model}}{
+	{{range $k, $v := .args_map}}{{$v}}: a.{{$v}},
+    {{end}}
+	}
 }
+
+{{- end}}

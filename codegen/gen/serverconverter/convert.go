@@ -1,4 +1,4 @@
-package serviceconverter
+package serverconverter
 
 import (
 	"bytes"
@@ -12,21 +12,21 @@ import (
 	"github.com/wvegtre/gogen-cli/gen/dbconverter"
 )
 
-type ServiceConverter struct {
-	config *serviceConverterConfig
+type ServerConverter struct {
+	config *serverConverterConfig
 }
 
-func NewServiceConverter(ops ...ServiceGenConfigOption) *ServiceConverter {
+func NewServerConverter(ops ...ServerGenConfigOption) *ServerConverter {
 	defaultConfig := newDefaultConfig()
 	for _, op := range ops {
 		op(defaultConfig)
 	}
-	return &ServiceConverter{
+	return &ServerConverter{
 		config: defaultConfig,
 	}
 }
 
-type serviceConverterConfig struct {
+type serverConverterConfig struct {
 	// some configs for write file
 	fileConfig
 }
@@ -38,22 +38,34 @@ type fileConfig struct {
 	SaveFileDefaultName string // default model.go, but invalid when AllInOneFile=false
 }
 
-func newDefaultConfig() *serviceConverterConfig {
-	c := &serviceConverterConfig{}
-	//c.fileConfig = fileConfig{
-	//	SaveDir:             "./",
-	//	SaveFileDefaultName: "service",
-	//}
+func newDefaultConfig() *serverConverterConfig {
+	c := &serverConverterConfig{}
 	return c
 }
 
-func (c *ServiceConverter) Run(groupMap map[string][]dbconverter.StructContentDetail) error {
-	for name, values := range groupMap {
-		outputFileContent, err := c.buildFileContent(name, values)
+func (c *ServerConverter) Run(detail *dbconverter.OutputDetail) error {
+	for name, values := range detail.GroupMap {
+		basePath := c.config.SaveDir + name
+		err := os.MkdirAll(basePath, os.ModePerm)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		savePath := c.config.SaveDir + name + "/" + c.config.SaveFileDefaultName + ".go"
+		// write args.go
+		outputFileContent, err := c.buildArgsFileContent(name, values, detail.TableMap)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		savePath := basePath + "/args.go"
+		err = c.writeToFile(savePath, outputFileContent)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		// write service.go
+		outputFileContent, err = c.buildServiceFileContent(name, values, detail.TableMap)
+		if err != nil {
+			return errors.WithStack(err)
+		}
+		savePath = basePath + "/service.go"
 		err = c.writeToFile(savePath, outputFileContent)
 		if err != nil {
 			return errors.WithStack(err)
@@ -62,26 +74,66 @@ func (c *ServiceConverter) Run(groupMap map[string][]dbconverter.StructContentDe
 	return nil
 }
 
-func (c *ServiceConverter) buildFileContent(name string, values []dbconverter.StructContentDetail) (string, error) {
-	outputFile := "package %s\n%s"
+func (c *ServerConverter) buildArgsFileContent(
+	name string, values []dbconverter.StructContentDetail,
+	content map[string]*dbconverter.TableContentDetail) (string, error) {
+	outputFile := "package %s\nimport(%s\n)\n%s"
+	importContent := "\n\"github.com/wvegtre/gogen-cli/output/database/%s\""
 	var outputContent string
 	for _, v := range values {
-		params := make(map[string]string)
+		params := make(map[string]interface{})
 		// StructName 就是通过 table name 处理后拼接上 "Model"，这里重新把 "Model" 移除就好了
 		params["service_prefix"] = strings.Replace(v.StructName, "Model", "", -1)
 		params["model"] = v.StructName
-		content, err := c.parseTemplate(params)
+		params["group"] = name
+
+		detail, ok := content[v.TableName]
+		if !ok {
+			return "", errors.New("not match content by table " + v.TableName)
+		}
+		params["args_slice"] = detail.FieldRow
+		params["args_map"] = detail.FieldMap
+
+		content, err := c.parseTemplate(params, "convert_args", "./gen/serverconverter/args.tpl")
 		if err != nil {
 			return "", errors.WithStack(err)
 		}
 		outputContent += content + "\n"
 	}
-	outputFile = fmt.Sprintf(outputFile, name, outputContent)
+	outputFile = fmt.Sprintf(outputFile, name, fmt.Sprintf(importContent, name), outputContent)
 	return outputFile, nil
 }
 
-func (c *ServiceConverter) parseTemplate(params map[string]string) (string, error) {
-	t, err := template.New("convert").ParseGlob("./gen/serviceconverter/service.tpl")
+func (c *ServerConverter) buildServiceFileContent(
+	name string, values []dbconverter.StructContentDetail,
+	content map[string]*dbconverter.TableContentDetail) (string, error) {
+	outputFile := "package %s\n\nimport(%s)\n%s"
+	var importContent string
+	importContent += "\n\"context\""
+	// TODO 未来这里有替换成项目具体的路径
+	importContent += "\n\"github.com/wvegtre/gogen-cli/output/database\""
+	importContent += "\n\"github.com/wvegtre/gogen-cli/output/%s\""
+	importContent += "\n\"github.com/pkg/errors\""
+	var outputContent string
+	for _, v := range values {
+		params := make(map[string]interface{})
+		// StructName 就是通过 table name 处理后拼接上 "Model"，这里重新把 "Model" 移除就好了
+		params["service_prefix"] = strings.Replace(v.StructName, "Model", "", -1)
+		params["model"] = v.StructName
+		params["group"] = name
+
+		content, err := c.parseTemplate(params, "convert_service", "./gen/serverconverter/service.tpl")
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+		outputContent += content + "\n"
+	}
+	outputFile = fmt.Sprintf(outputFile, name, fmt.Sprintf(importContent, name), outputContent)
+	return outputFile, nil
+}
+
+func (c *ServerConverter) parseTemplate(params map[string]interface{}, name, filePath string) (string, error) {
+	t, err := template.New(name).ParseGlob(filePath)
 	if err != nil {
 		return "", errors.WithStack(err)
 	}
@@ -93,10 +145,10 @@ func (c *ServiceConverter) parseTemplate(params map[string]string) (string, erro
 	return buf.String(), nil
 }
 
-func (c *ServiceConverter) writeToFile(filePath string, content string) error {
+func (c *ServerConverter) writeToFile(filePath string, content string) error {
 	f, err := os.Create(filePath)
 	if err != nil {
-		log.Println("Can not write file")
+		log.Println("Can not write file, err: ", err)
 		return errors.WithStack(err)
 	}
 	defer f.Close()

@@ -6,13 +6,14 @@ import (
 	"github.com/pkg/errors"
 	"github.com/wvegtre/gogen-cli/gen/config"
 	"github.com/wvegtre/gogen-cli/gen/dbconverter"
+	"github.com/wvegtre/gogen-cli/gen/serverconverter"
 	"github.com/wvegtre/gogen-cli/gen/serviceconverter"
 )
 
 type MySQLDBConnect struct {
 	Config *config.GenConfig
 	// key: group_name, values include table_name and struct_name
-	groupMap map[string][]dbconverter.StructContentDetail
+	Output *dbconverter.OutputDetail
 }
 
 // GenStructByDBFields 利用第三方 convert 包完成以下几件事
@@ -41,12 +42,12 @@ func (c *MySQLDBConnect) GenStructByDBFields(parameter GenDBCodeParameter) error
 		tables := strings.Split(c.Config.Drivers.Mysql.Tables, ",")
 		dbconverter.WithTables(tables)
 	}
-	groupMap, err := dbconverter.NewMySQLConverter(dc, options...).Run()
+	detail, err := dbconverter.NewMySQLConverter(dc, options...).Run()
 	if err != nil {
 		return errors.WithStack(err)
 	}
 	// 记录关联关系，后边生成 service 层代码会用到
-	c.groupMap = groupMap
+	c.Output = detail
 	return nil
 }
 
@@ -55,7 +56,7 @@ func (c *MySQLDBConnect) GenServiceForDBStruct() error {
 		serviceconverter.WithSaveDir(c.Config.Output.Dir + "database/"),
 		serviceconverter.WithSaveFileDefaultName("service"),
 	}
-	err := serviceconverter.NewServiceConverter(options...).Run(c.groupMap)
+	err := serviceconverter.NewServiceConverter(options...).Run(c.Output.GroupMap)
 	if err != nil {
 		return errors.WithStack(err)
 	}
@@ -63,11 +64,11 @@ func (c *MySQLDBConnect) GenServiceForDBStruct() error {
 }
 
 func (c *MySQLDBConnect) GenServerFunc() error {
-	options := []serviceconverter.ServiceGenConfigOption{
-		serviceconverter.WithSaveDir(c.Config.Output.Dir + "database/"),
-		serviceconverter.WithSaveFileDefaultName("service"),
+	options := []serverconverter.ServerGenConfigOption{
+		serverconverter.WithSaveDir(c.Config.Output.Dir + "server/"),
+		//serviceconverter.WithSaveFileDefaultName("service"),
 	}
-	err := serviceconverter.NewServiceConverter(options...).Run(c.groupMap)
+	err := serverconverter.NewServerConverter(options...).Run(c.Output)
 	if err != nil {
 		return errors.WithStack(err)
 	}

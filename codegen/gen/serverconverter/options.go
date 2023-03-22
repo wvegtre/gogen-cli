@@ -1,22 +1,22 @@
-package serviceconverter
+package serverconverter
 
-type ServiceGenConfigOption func(config *serviceConverterConfig)
+type ServerGenConfigOption func(config *serverConverterConfig)
 
-func WithSaveDir(saveDir string) ServiceGenConfigOption {
-	return func(config *serviceConverterConfig) {
+func WithSaveDir(saveDir string) ServerGenConfigOption {
+	return func(config *serverConverterConfig) {
 		config.SaveDir = saveDir
 	}
 }
 
 //
-//func WithSaveFilePrefix(saveFilePrefix string) ServiceGenConfigOption {
-//	return func(config *serviceConverterConfig) {
+//func WithSaveFilePrefix(saveFilePrefix string) ServerGenConfigOption {
+//	return func(config *serverConverterConfig) {
 //		config.SaveFilePrefix = saveFilePrefix
 //	}
 //}
 
-func WithSaveFileDefaultName(saveFileDefaultName string) ServiceGenConfigOption {
-	return func(config *serviceConverterConfig) {
+func WithSaveFileDefaultName(saveFileDefaultName string) ServerGenConfigOption {
+	return func(config *serverConverterConfig) {
 		config.SaveFileDefaultName = saveFileDefaultName
 	}
 }

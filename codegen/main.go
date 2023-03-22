@@ -45,6 +45,11 @@ func main() {
 		log.Println("GenServiceForDBStruct Failed, err: ", err)
 		os.Exit(0)
 	}
+	err = operator.GenServerFunc()
+	if err != nil {
+		log.Println("GenServerFunc Failed, err: ", err)
+		os.Exit(0)
+	}
 	log.Println("end running. all filed output to target path.")
 }
 

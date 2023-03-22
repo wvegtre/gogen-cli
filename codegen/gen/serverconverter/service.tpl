@@ -1,72 +1,61 @@
-package user
+{{define "convert_service"}}
 
-import (
-	"context"
-
-	"echo-shopping/internal/app/database"
-	"echo-shopping/internal/app/database/user"
-
-	"github.com/pkg/errors"
-)
-
-type UserService service
-
-type service struct {
+type {{.service_prefix}}Service struct {
 	DBOperation   *database.Operation
-	DBUserService *user.UserService
+	DB{{.service_prefix}}Service *{{.group}}.{{.service_prefix}}Service
 }
 
-func NewService() *UserService {
-	return &UserService{
+func New{{.service_prefix}}Service() *{{.service_prefix}}Service {
+	return &{{.service_prefix}}Service{
 		DBOperation:   database.NewOperation(),
-		DBUserService: user.NewUserService(),
+		DB{{.service_prefix}}Service: {{.group}}.New{{.service_prefix}}Service(),
 	}
 }
 
-func (s *UserService) Get(ctx context.Context, id int64) (user.UserModel, error) {
-	var dbUser user.UserModel
-	err := s.DBOperation.QueryByID(ctx, s.DBUserService, id, &dbUser)
+func (s *{{.service_prefix}}Service) Get(ctx context.Context, id int64) ({{.group}}.{{.model}}, error) {
+	var db{{.model}} {{.group}}.{{.model}}
+	err := s.DBOperation.QueryByID(ctx, s.DB{{.service_prefix}}Service, id, &db{{.model}})
 	if err != nil {
-		return dbUser, errors.WithStack(err)
+		return db{{.model}}, errors.WithStack(err)
 	}
-	return dbUser, nil
+	return db{{.model}}, nil
 }
 
-func (s *UserService) List(ctx context.Context, args ListArgs) ([]user.UserModel, error) {
-	var dbUsers []user.UserModel
-	// TODO
+func (s *{{.service_prefix}}Service) List(ctx context.Context, args List{{.service_prefix}}Args) ([]{{.group}}.{{.model}}, error) {
+	var db{{.model}}s []{{.group}}.{{.model}}
 	whereArgs := args.toDbQueryArgs()
-	// TODO query options
-	err := s.DBOperation.Query(ctx, s.DBUserService, whereArgs, &dbUsers)
+	err := s.DBOperation.Query(ctx, s.DB{{.service_prefix}}Service, whereArgs, &db{{.model}}s)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return dbUsers, nil
+	return db{{.model}}s, nil
 }
 
-func (s *UserService) Create(ctx context.Context, args CreateArgs) (user.UserModel, error) {
-	var dbUser user.UserModel
-	_, err := s.DBOperation.Create(ctx, s.DBUserService, &dbUser)
+func (s *{{.service_prefix}}Service) Create(ctx context.Context, args Create{{.service_prefix}}Args) ({{.group}}.{{.model}}, error) {
+	var db{{.model}} {{.group}}.{{.model}}
+	_, err := s.DBOperation.Create(ctx, s.DB{{.service_prefix}}Service, &db{{.model}})
 	if err != nil {
-		return dbUser, errors.WithStack(err)
+		return db{{.model}}, errors.WithStack(err)
 	}
-	return dbUser, nil
+	return db{{.model}}, nil
 }
 
-func (s *UserService) UpdateByID(ctx context.Context, id int64, args UpdateArgs) (user.UserModel, error) {
-	var dbUser user.UserModel
-	_, err := s.DBOperation.UpdateByID(ctx, s.DBUserService, id, args.toDbUpdateArgs(), &dbUser)
+func (s *{{.service_prefix}}Service) UpdateByID(ctx context.Context, id int64, args Update{{.service_prefix}}Args) ({{.group}}.{{.model}}, error) {
+	var db{{.model}} {{.group}}.{{.model}}
+	_, err := s.DBOperation.UpdateByID(ctx, s.DB{{.service_prefix}}Service, id, args.toDbUpdateArgs(), &db{{.model}})
 	if err != nil {
-		return dbUser, errors.WithStack(err)
+		return db{{.model}}, errors.WithStack(err)
 	}
-	return dbUser, nil
+	return db{{.model}}, nil
 }
 
-func (s *UserService) Delete(ctx context.Context, id int64) (user.UserModel, error) {
-	var dbUser user.UserModel
-	_, err := s.DBOperation.DeleteByID(ctx, s.DBUserService, id, &dbUser)
+func (s *{{.service_prefix}}Service) Delete(ctx context.Context, id int64) ({{.group}}.{{.model}}, error) {
+	var db{{.model}} {{.group}}.{{.model}}
+	_, err := s.DBOperation.DeleteByID(ctx, s.DB{{.service_prefix}}Service, id, &db{{.model}})
 	if err != nil {
-		return dbUser, errors.WithStack(err)
+		return db{{.model}}, errors.WithStack(err)
 	}
-	return dbUser, nil
+	return db{{.model}}, nil
 }
+
+{{- end}}

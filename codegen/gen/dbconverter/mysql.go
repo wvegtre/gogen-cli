@@ -276,7 +276,10 @@ func (c *MySQLConverter) convertStructContent(
 ) (string, *TableContentDetail) {
 	depth := 1
 	var structContent string
-	detail := &TableContentDetail{}
+	detail := &TableContentDetail{
+		FieldRow: make([]string, 0),
+		FieldMap: make(map[string]string),
+	}
 	structContent += "type " + structName + " struct {\n"
 	structContent += "gorm.Model\n"
 	for _, v := range item {
@@ -288,11 +291,11 @@ func (c *MySQLConverter) convertStructContent(
 		if v.ColumnComment != "" {
 			comment = fmt.Sprintf(" // %s", v.ColumnComment)
 		}
-		filedContent := fmt.Sprintf("%s%s %s\n",
-			tab(depth), v.ColumnName, v.Type)
+		filedContent := fmt.Sprintf("%s%s %s",
+			tab(depth), v.ColumnFieldName, v.Type)
 		structContent += fmt.Sprintf("%s %s%s\n",
 			filedContent, v.Tag, comment)
-		detail.FieldMap[v.Tag] = v.ColumnName
+		detail.FieldMap[v.ColumnName] = v.ColumnFieldName
 		detail.FieldRow = append(detail.FieldRow, filedContent)
 	}
 	structContent += tab(depth-1) + "}\n\n"
@@ -332,12 +335,13 @@ func (c *MySQLConverter) genStructNameByTableName(tableName string) string {
 }
 
 type column struct {
-	ColumnName    string
-	Type          string
-	Nullable      string
-	TableName     string
-	ColumnComment string
-	Tag           string
+	ColumnName      string
+	ColumnFieldName string
+	Type            string
+	Nullable        string
+	TableName       string
+	ColumnComment   string
+	Tag             string
 }
 
 // Function for fetching schema definition of passed table
@@ -373,7 +377,7 @@ func (c *MySQLConverter) getColumns(table ...string) (tableColumns map[string][]
 			log.Println(err.Error())
 			return
 		}
-		// ColumnName 转换成小写作为 tag
+		// ColumnFieldName 转换成小写作为 tag
 		tag := strings.ToLower(col.ColumnName)
 		// add gorm tag
 		col.Tag = "`" + fmt.Sprintf("%s:\"%s\"", "gorm", tag)
@@ -382,9 +386,10 @@ func (c *MySQLConverter) getColumns(table ...string) (tableColumns map[string][]
 		}
 		col.Tag += "`"
 		// 处理成首字母大写，后边struct 生成时需要
-		col.ColumnName = c.camelCase(col.ColumnName)
+		col.ColumnFieldName = c.camelCase(col.ColumnName)
 		col.Type = fieldTypeMapping[col.Type]
 		tableColumns[col.TableName] = append(tableColumns[col.TableName], col)
+		log.Println("query column, name: ", col.ColumnName, ", field: ", col.ColumnFieldName)
 	}
 	return
 }
