@@ -8,9 +8,8 @@ import (
 	"os"
 	"strings"
 
-	"echo-shopping/scripts/codegen/tools/dbconverter"
-
 	"github.com/pkg/errors"
+	"github.com/wvegtre/gogen-cli/gen/dbconverter"
 )
 
 type ServiceConverter struct {
@@ -41,10 +40,10 @@ type fileConfig struct {
 
 func newDefaultConfig() *serviceConverterConfig {
 	c := &serviceConverterConfig{}
-	c.fileConfig = fileConfig{
-		SaveDir:             "./",
-		SaveFileDefaultName: "service",
-	}
+	//c.fileConfig = fileConfig{
+	//	SaveDir:             "./",
+	//	SaveFileDefaultName: "service",
+	//}
 	return c
 }
 
@@ -64,10 +63,7 @@ func (c *ServiceConverter) Run(groupMap map[string][]dbconverter.StructContentDe
 }
 
 func (c *ServiceConverter) buildFileContent(name string, values []dbconverter.StructContentDetail) (string, error) {
-	outputFile := `package %s
-		
-		%s
-		`
+	outputFile := "package %s\n%s"
 	var outputContent string
 	for _, v := range values {
 		params := make(map[string]string)
@@ -85,7 +81,7 @@ func (c *ServiceConverter) buildFileContent(name string, values []dbconverter.St
 }
 
 func (c *ServiceConverter) parseTemplate(params map[string]string) (string, error) {
-	t, err := template.New("convert").ParseGlob("./tools/serviceconverter/service.tpl")
+	t, err := template.New("convert").ParseGlob("./gen/serviceconverter/service.tpl")
 	if err != nil {
 		return "", errors.WithStack(err)
 	}

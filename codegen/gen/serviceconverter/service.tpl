@@ -1,5 +1,4 @@
 {{define "convert"}}
-
 type {{.service_prefix}}Service struct{}
 
 func New{{.service_prefix}}Service() *{{.service_prefix}}Service {

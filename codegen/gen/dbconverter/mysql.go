@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
-
-	"echo-shopping/tools/array"
 
 	"github.com/go-playground/validator/v10"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/pkg/errors"
+	"github.com/wvegtre/tools-cli/tools/array"
 )
 
 //map for converting mysql type to golang types
@@ -58,6 +58,12 @@ type MySQLConverter struct {
 	config   *mySQLConverterConfig
 }
 
+// 暴露一些信息给其他地方生成代码用
+type OutputDetail struct {
+	GroupMap map[string][]StructContentDetail
+	TableMap map[string]*TableContentDetail
+}
+
 func NewMySQLConverter(dc DBConfig, ops ...MySQLConfigOption) *MySQLConverter {
 	defaultConfig := newDefaultConfig()
 	defaultConfig.DBConfig = dc
@@ -76,11 +82,11 @@ func newDefaultConfig() *mySQLConverterConfig {
 	c.fieldConfig = fieldConfig{
 		EnableJsonTag: true,
 	}
-	c.fileConfig = fileConfig{
-		AllInOneFile:        true,
-		SaveDir:             "./",
-		SaveFileDefaultName: "model.go",
-	}
+	//c.fileConfig = fileConfig{
+	//AllInOneFile:        true,
+	//SaveDir:             "./",
+	//SaveFileDefaultName: "model.go",
+	//}
 	return c
 }
 
@@ -102,10 +108,10 @@ type fieldConfig struct {
 }
 
 type fileConfig struct {
-	AllInOneFile        bool
-	SaveDir             string
-	SaveFilePrefix      string
-	SaveFileDefaultName string // default model.go, but invalid when AllInOneFile=false
+	//AllInOneFile   bool
+	SaveDir        string
+	SaveFilePrefix string
+	//SaveFileDefaultName string // default model.go, but invalid when AllInOneFile=false
 }
 
 type DBConfig struct {
@@ -124,7 +130,12 @@ type StructContentDetail struct {
 	Content    string
 }
 
-func (c *MySQLConverter) Run() (map[string][]StructContentDetail, error) {
+type TableContentDetail struct {
+	FieldRow []string
+	FieldMap map[string]string // key: db.field, value: struct.filed
+}
+
+func (c *MySQLConverter) Run() (*OutputDetail, error) {
 	err := validator.New().Struct(c.config)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -143,17 +154,20 @@ func (c *MySQLConverter) Run() (map[string][]StructContentDetail, error) {
 	// 组装struct
 	//structContentMap := make([]StructContentDetail, 0)
 	groupMap := make(map[string][]StructContentDetail, 0)
+	tableMap := make(map[string]*TableContentDetail, 0)
 	for tableRealName, item := range tableColumns {
 		groupName, ok := _tableGroups[tableRealName]
 		if !ok {
 			groupName = "undefined"
 		}
 		structName := c.genStructNameByTableName(tableRealName)
+		content, detail := c.convertStructContent(tableRealName, structName, item)
+		tableMap[tableRealName] = detail
 		// 按分组存放好，每个组在一个 package 下
 		groupMap[groupName] = append(groupMap[groupName], StructContentDetail{
 			TableName:  tableRealName,
 			StructName: structName,
-			Content:    c.convertStructContent(tableRealName, structName, item),
+			Content:    content,
 		})
 	}
 	// 写入
@@ -163,7 +177,10 @@ func (c *MySQLConverter) Run() (map[string][]StructContentDetail, error) {
 			return nil, errors.WithStack(err)
 		}
 	}
-	return groupMap, nil
+	return &OutputDetail{
+		GroupMap: groupMap,
+		TableMap: tableMap,
+	}, nil
 }
 
 func (c *MySQLConverter) dialMysql() error {
@@ -192,15 +209,15 @@ func (c *MySQLConverter) output(packageName string, fileName string, structConte
 	if err != nil {
 		return errors.WithStack(err)
 	}
-	if c.config.AllInOneFile {
-		// 是否指定保存路径
-		savePath := c.getSavePath(basePath, c.config.SaveFileDefaultName)
-		var structContent string
-		for _, v := range structContentMap {
-			structContent += v.Content
-		}
-		return c.write2File(packageName, structContent, savePath)
-	}
+	//if c.config.AllInOneFile {
+	//	// 是否指定保存路径
+	//	savePath := c.getSavePath(basePath, c.config.SaveFileDefaultName)
+	//	var structContent string
+	//	for _, v := range structContentMap {
+	//		structContent += v.Content
+	//	}
+	//	return c.write2File(packageName, structContent, savePath)
+	//}
 	// 分多文件存储
 	for _, v := range structContentMap {
 		// 格式化路径
@@ -224,9 +241,13 @@ func (c *MySQLConverter) write2File(packageName, structContent, savePath string)
 	// 如果有引入 time.Time, 则需要引入 time 包
 	var moreContent string
 	moreContent += "package " + packageName + "\n"
+	importContent := `import(
+		"gorm.io/gorm"`
 	if strings.Contains(structContent, "time.Time") {
-		moreContent += "import \"time\"\n\n"
+		importContent += "\n" + "\"time\""
 	}
+	importContent += "\n)\n\n"
+	moreContent += importContent
 	filePath := fmt.Sprintf("%s", savePath)
 	f, err := os.Create(filePath)
 	if err != nil {
@@ -241,18 +262,24 @@ func (c *MySQLConverter) write2File(packageName, structContent, savePath string)
 	}
 
 	log.Println("write to field succeed. path: ", filePath)
-	//
-	//cmd := exec.Command("gofmt", "-w", filePath)
-	//err = cmd.Run()
-	//if err != nil {
-	//	return errors.WithStack(err)
-	//}
+
+	cmd := exec.Command("gofmt", "-w", filePath)
+	err = cmd.Run()
+	if err != nil {
+		return errors.WithStack(err)
+	}
 	return nil
 }
 
-func (c *MySQLConverter) convertStructContent(tableRealName, structName string, item []column) string {
+func (c *MySQLConverter) convertStructContent(
+	tableRealName, structName string, item []column,
+) (string, *TableContentDetail) {
 	depth := 1
 	var structContent string
+	detail := &TableContentDetail{
+		FieldRow: make([]string, 0),
+		FieldMap: make(map[string]string),
+	}
 	structContent += "type " + structName + " struct {\n"
 	structContent += "gorm.Model\n"
 	for _, v := range item {
@@ -264,13 +291,17 @@ func (c *MySQLConverter) convertStructContent(tableRealName, structName string, 
 		if v.ColumnComment != "" {
 			comment = fmt.Sprintf(" // %s", v.ColumnComment)
 		}
-		structContent += fmt.Sprintf("%s%s %s %s%s\n",
-			tab(depth), v.ColumnName, v.Type, v.Tag, comment)
+		filedContent := fmt.Sprintf("%s%s %s",
+			tab(depth), v.ColumnFieldName, v.Type)
+		structContent += fmt.Sprintf("%s %s%s\n",
+			filedContent, v.Tag, comment)
+		detail.FieldMap[v.ColumnName] = v.ColumnFieldName
+		detail.FieldRow = append(detail.FieldRow, filedContent)
 	}
 	structContent += tab(depth-1) + "}\n\n"
 	structContent += c.addTableNameFunc(tableRealName, structName) + "\n\n"
 	log.Println("convert to struct succeed. table: ", tableRealName, ", struct: ", structName)
-	return structContent
+	return structContent, detail
 }
 
 func (c *MySQLConverter) isGormCommonFields(tag string) bool {
@@ -304,12 +335,13 @@ func (c *MySQLConverter) genStructNameByTableName(tableName string) string {
 }
 
 type column struct {
-	ColumnName    string
-	Type          string
-	Nullable      string
-	TableName     string
-	ColumnComment string
-	Tag           string
+	ColumnName      string
+	ColumnFieldName string
+	Type            string
+	Nullable        string
+	TableName       string
+	ColumnComment   string
+	Tag             string
 }
 
 // Function for fetching schema definition of passed table
@@ -345,7 +377,7 @@ func (c *MySQLConverter) getColumns(table ...string) (tableColumns map[string][]
 			log.Println(err.Error())
 			return
 		}
-		// ColumnName 转换成小写作为 tag
+		// ColumnFieldName 转换成小写作为 tag
 		tag := strings.ToLower(col.ColumnName)
 		// add gorm tag
 		col.Tag = "`" + fmt.Sprintf("%s:\"%s\"", "gorm", tag)
@@ -354,9 +386,10 @@ func (c *MySQLConverter) getColumns(table ...string) (tableColumns map[string][]
 		}
 		col.Tag += "`"
 		// 处理成首字母大写，后边struct 生成时需要
-		col.ColumnName = c.camelCase(col.ColumnName)
+		col.ColumnFieldName = c.camelCase(col.ColumnName)
 		col.Type = fieldTypeMapping[col.Type]
 		tableColumns[col.TableName] = append(tableColumns[col.TableName], col)
+		log.Println("query column, name: ", col.ColumnName, ", field: ", col.ColumnFieldName)
 	}
 	return
 }
