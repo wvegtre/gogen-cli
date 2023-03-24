@@ -31,9 +31,9 @@ func (c *MySQLDBConnect) GenStructByDBFields(parameter GenDBCodeParameter) error
 		Database: parameter.Database,
 	}
 	options := []dbconverter.MySQLConfigOption{
-		dbconverter.WithSaveDir(c.Config.Output.Dir + "database/"),
-		//dbconverter.WithSaveFileDefaultName("model"),
-		//dbconverter.WithAllInOneFile(parameter.GroupInOneFile),
+		dbconverter.WithSaveDir(c.Config.Output.Dir),
+		dbconverter.WithSaveProjectName(c.Config.Output.ProjectName),
+		dbconverter.WithSavePackageName("/internal/app/database"),
 	}
 	if parameter.Charset != "" {
 		dbconverter.WithCharset(parameter.Charset)
@@ -53,8 +53,9 @@ func (c *MySQLDBConnect) GenStructByDBFields(parameter GenDBCodeParameter) error
 
 func (c *MySQLDBConnect) GenServiceForDBStruct() error {
 	options := []serviceconverter.ServiceGenConfigOption{
-		serviceconverter.WithSaveDir(c.Config.Output.Dir + "database/"),
-		serviceconverter.WithSaveFileDefaultName("service"),
+		serviceconverter.WithSaveDir(c.Config.Output.Dir),
+		serviceconverter.WithSaveProjectName(c.Config.Output.ProjectName),
+		serviceconverter.WithSavePackageName("/internal/app/database/"),
 	}
 	err := serviceconverter.NewServiceConverter(options...).Run(c.Output.GroupMap)
 	if err != nil {
@@ -65,8 +66,9 @@ func (c *MySQLDBConnect) GenServiceForDBStruct() error {
 
 func (c *MySQLDBConnect) GenServerFunc() error {
 	options := []serverconverter.ServerGenConfigOption{
-		serverconverter.WithSaveDir(c.Config.Output.Dir + "server/"),
-		//serviceconverter.WithSaveFileDefaultName("service"),
+		serverconverter.WithSaveDir(c.Config.Output.Dir),
+		serverconverter.WithSaveProjectName(c.Config.Output.ProjectName),
+		serverconverter.WithSavePackageName("/internal/app/server/"),
 	}
 	err := serverconverter.NewServerConverter(options...).Run(c.Output)
 	if err != nil {

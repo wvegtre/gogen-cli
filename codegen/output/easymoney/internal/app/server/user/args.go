@@ -1,38 +1,8 @@
 package user
 
 import (
-	"github.com/wvegtre/gogen-cli/output/database/user"
+	"github.com/wvegtre/gogen-cli/output/easymoney/internal/app/database/user"
 )
-
-type ListUserAuthArgs struct {
-	Id      int
-	TokenId string
-}
-
-func (a ListUserAuthArgs) toDbQueryArgs() map[string]interface{} {
-	m := make(map[string]interface{}, 0)
-	m["id"] = a.Id
-	m["token_id"] = a.TokenId
-
-	return m
-}
-
-type CreateUserAuthArgs struct {
-	Id      int
-	TokenId string
-}
-
-type UpdateUserAuthArgs struct {
-	Id      int
-	TokenId string
-}
-
-func (a UpdateUserAuthArgs) toDbUpdateArgs() user.UserAuthModel {
-	return user.UserAuthModel{
-		Id:      a.Id,
-		TokenId: a.TokenId,
-	}
-}
 
 type ListUsersArgs struct {
 	Id        int
@@ -81,5 +51,35 @@ func (a UpdateUsersArgs) toDbUpdateArgs() user.UsersModel {
 		Name:      a.Name,
 		UpdatedAt: a.UpdatedAt,
 		UserNo:    a.UserNo,
+	}
+}
+
+type ListUserAuthArgs struct {
+	Id      int
+	TokenId string
+}
+
+func (a ListUserAuthArgs) toDbQueryArgs() map[string]interface{} {
+	m := make(map[string]interface{}, 0)
+	m["id"] = a.Id
+	m["token_id"] = a.TokenId
+
+	return m
+}
+
+type CreateUserAuthArgs struct {
+	Id      int
+	TokenId string
+}
+
+type UpdateUserAuthArgs struct {
+	Id      int
+	TokenId string
+}
+
+func (a UpdateUserAuthArgs) toDbUpdateArgs() user.UserAuthModel {
+	return user.UserAuthModel{
+		Id:      a.Id,
+		TokenId: a.TokenId,
 	}
 }

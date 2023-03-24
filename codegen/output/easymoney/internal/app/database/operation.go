@@ -3,9 +3,8 @@ package database
 import (
 	"context"
 
-	"gorm.io/gorm"
-
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 type Operation struct {

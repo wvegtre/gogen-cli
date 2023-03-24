@@ -1,6 +1,7 @@
 {
   "output": {
-    "dir": "./output/"
+    "dir": "./output/",
+    "project_name": "easymoney"
   },
   "drivers": {
     "mysql": {

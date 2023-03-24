@@ -109,8 +109,10 @@ type fieldConfig struct {
 
 type fileConfig struct {
 	//AllInOneFile   bool
-	SaveDir        string
-	SaveFilePrefix string
+	SaveDir         string
+	SaveFilePrefix  string
+	SaveProjectName string
+	SavePackageName string
 	//SaveFileDefaultName string // default model.go, but invalid when AllInOneFile=false
 }
 
@@ -202,9 +204,27 @@ func (c *MySQLConverter) dialMysql() error {
 	return nil
 }
 
+func (c *MySQLConverter) genCompletePathPrefix() string {
+	basePath := c.config.SaveDir
+	basePath = c.appendSuffix(basePath)
+	basePath += c.config.SaveProjectName
+	basePath = c.appendSuffix(basePath)
+	basePath += c.config.SavePackageName
+	basePath = c.appendSuffix(basePath)
+	return basePath
+}
+
+func (c *MySQLConverter) appendSuffix(basePath string) string {
+	if !strings.HasSuffix(basePath, "/") {
+		basePath += "/"
+	}
+	return basePath
+}
+
 func (c *MySQLConverter) output(packageName string, fileName string, structContentMap []StructContentDetail) error {
 	// 不分多个文件存储，直接 save 后 return
-	basePath := c.config.SaveDir + packageName
+	basePath := c.genCompletePathPrefix() + packageName
+	log.Println("create file folder, path:  ", basePath)
 	err := os.MkdirAll(basePath, os.ModePerm)
 	if err != nil {
 		return errors.WithStack(err)

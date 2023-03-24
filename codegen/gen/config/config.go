@@ -19,6 +19,7 @@ type Mysql struct {
 }
 
 type Output struct {
-	Dir string `json:"dir"`
+	Dir         string `json:"dir"`
+	ProjectName string `json:"project_name"`
 	//GroupInOneFile bool   `json:"group_in_one_file"`
 }

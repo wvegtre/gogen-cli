@@ -32,10 +32,9 @@ type serviceConverterConfig struct {
 }
 
 type fileConfig struct {
-	//AllInOneFile        bool
-	SaveDir string
-	//SaveFilePrefix      string
-	SaveFileDefaultName string // default model.go, but invalid when AllInOneFile=false
+	SaveDir         string
+	SaveProjectName string
+	SavePackageName string
 }
 
 func newDefaultConfig() *serviceConverterConfig {
@@ -47,13 +46,30 @@ func newDefaultConfig() *serviceConverterConfig {
 	return c
 }
 
+func (c *ServiceConverter) genCompletePathPrefix() string {
+	basePath := c.config.SaveDir
+	basePath = c.appendSuffix(basePath)
+	basePath += c.config.SaveProjectName
+	basePath = c.appendSuffix(basePath)
+	basePath += c.config.SavePackageName
+	basePath = c.appendSuffix(basePath)
+	return basePath
+}
+
+func (c *ServiceConverter) appendSuffix(basePath string) string {
+	if !strings.HasSuffix(basePath, "/") {
+		basePath += "/"
+	}
+	return basePath
+}
+
 func (c *ServiceConverter) Run(groupMap map[string][]dbconverter.StructContentDetail) error {
 	for name, values := range groupMap {
 		outputFileContent, err := c.buildFileContent(name, values)
 		if err != nil {
 			return errors.WithStack(err)
 		}
-		savePath := c.config.SaveDir + name + "/" + c.config.SaveFileDefaultName + ".go"
+		savePath := c.genCompletePathPrefix() + name + "/service.go"
 		err = c.writeToFile(savePath, outputFileContent)
 		if err != nil {
 			return errors.WithStack(err)

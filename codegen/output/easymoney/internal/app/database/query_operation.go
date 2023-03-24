@@ -3,9 +3,8 @@ package database
 import (
 	"context"
 
-	"gorm.io/gorm"
-
 	"github.com/pkg/errors"
+	"gorm.io/gorm"
 )
 
 // CustomerQuery A query function for special scenarios which query function can't cover, you should support a customer query

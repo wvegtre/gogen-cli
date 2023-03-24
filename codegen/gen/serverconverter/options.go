@@ -8,15 +8,14 @@ func WithSaveDir(saveDir string) ServerGenConfigOption {
 	}
 }
 
-//
-//func WithSaveFilePrefix(saveFilePrefix string) ServerGenConfigOption {
-//	return func(config *serverConverterConfig) {
-//		config.SaveFilePrefix = saveFilePrefix
-//	}
-//}
-
-func WithSaveFileDefaultName(saveFileDefaultName string) ServerGenConfigOption {
+func WithSavePackageName(packageName string) ServerGenConfigOption {
 	return func(config *serverConverterConfig) {
-		config.SaveFileDefaultName = saveFileDefaultName
+		config.SavePackageName = packageName
+	}
+}
+
+func WithSaveProjectName(saveProjectName string) ServerGenConfigOption {
+	return func(config *serverConverterConfig) {
+		config.SaveProjectName = saveProjectName
 	}
 }

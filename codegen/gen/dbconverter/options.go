@@ -26,6 +26,18 @@ func WithSaveFilePrefix(saveFilePrefix string) MySQLConfigOption {
 	}
 }
 
+func WithSaveProjectName(saveProjectName string) MySQLConfigOption {
+	return func(config *mySQLConverterConfig) {
+		config.SaveProjectName = saveProjectName
+	}
+}
+
+func WithSavePackageName(packageName string) MySQLConfigOption {
+	return func(config *mySQLConverterConfig) {
+		config.SavePackageName = packageName
+	}
+}
+
 func WithCharset(charset string) MySQLConfigOption {
 	return func(config *mySQLConverterConfig) {
 		config.charset = charset

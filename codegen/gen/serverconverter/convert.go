@@ -32,10 +32,9 @@ type serverConverterConfig struct {
 }
 
 type fileConfig struct {
-	//AllInOneFile        bool
-	SaveDir string
-	//SaveFilePrefix      string
-	SaveFileDefaultName string // default model.go, but invalid when AllInOneFile=false
+	SaveDir         string
+	SaveProjectName string
+	SavePackageName string
 }
 
 func newDefaultConfig() *serverConverterConfig {
@@ -43,9 +42,27 @@ func newDefaultConfig() *serverConverterConfig {
 	return c
 }
 
+func (c *ServerConverter) genCompletePathPrefix() string {
+	basePath := c.config.SaveDir
+	basePath = c.appendSuffix(basePath)
+	basePath += c.config.SaveProjectName
+	basePath = c.appendSuffix(basePath)
+	basePath += c.config.SavePackageName
+	basePath = c.appendSuffix(basePath)
+	return basePath
+}
+
+func (c *ServerConverter) appendSuffix(basePath string) string {
+	if !strings.HasSuffix(basePath, "/") {
+		basePath += "/"
+	}
+	return basePath
+}
+
 func (c *ServerConverter) Run(detail *dbconverter.OutputDetail) error {
 	for name, values := range detail.GroupMap {
-		basePath := c.config.SaveDir + name
+		basePath := c.genCompletePathPrefix() + name
+		log.Println("create file folder, path:  ", basePath)
 		err := os.MkdirAll(basePath, os.ModePerm)
 		if err != nil {
 			return errors.WithStack(err)
@@ -78,7 +95,7 @@ func (c *ServerConverter) buildArgsFileContent(
 	name string, values []dbconverter.StructContentDetail,
 	content map[string]*dbconverter.TableContentDetail) (string, error) {
 	outputFile := "package %s\nimport(%s\n)\n%s"
-	importContent := "\n\"github.com/wvegtre/gogen-cli/output/database/%s\""
+	importContent := "\n\"github.com/wvegtre/gogen-cli/output/%s/internal/app/database/%s\""
 	var outputContent string
 	for _, v := range values {
 		params := make(map[string]interface{})
@@ -100,7 +117,7 @@ func (c *ServerConverter) buildArgsFileContent(
 		}
 		outputContent += content + "\n"
 	}
-	outputFile = fmt.Sprintf(outputFile, name, fmt.Sprintf(importContent, name), outputContent)
+	outputFile = fmt.Sprintf(outputFile, name, fmt.Sprintf(importContent, c.config.SaveProjectName, name), outputContent)
 	return outputFile, nil
 }
 
@@ -110,9 +127,8 @@ func (c *ServerConverter) buildServiceFileContent(
 	outputFile := "package %s\n\nimport(%s)\n%s"
 	var importContent string
 	importContent += "\n\"context\""
-	// TODO 未来这里有替换成项目具体的路径
-	importContent += "\n\"github.com/wvegtre/gogen-cli/output/database\""
-	importContent += "\n\"github.com/wvegtre/gogen-cli/output/%s\""
+	importContent += "\n\"github.com/wvegtre/gogen-cli/output/%s/internal/app/database\""
+	importContent += "\n\"github.com/wvegtre/gogen-cli/output/%s/internal/app/database/%s\""
 	importContent += "\n\"github.com/pkg/errors\""
 	var outputContent string
 	for _, v := range values {
@@ -128,7 +144,9 @@ func (c *ServerConverter) buildServiceFileContent(
 		}
 		outputContent += content + "\n"
 	}
-	outputFile = fmt.Sprintf(outputFile, name, fmt.Sprintf(importContent, name), outputContent)
+	outputFile = fmt.Sprintf(outputFile, name, fmt.Sprintf(
+		importContent, c.config.SaveProjectName, c.config.SaveProjectName, name,
+	), outputContent)
 	return outputFile, nil
 }
 
