@@ -21,12 +21,11 @@ func (a ListUsersArgs) toDbQueryArgs() map[string]interface{} {
 	m["name"] = a.Name
 	m["updated_at"] = a.UpdatedAt
 	m["user_no"] = a.UserNo
-
 	return m
 }
 
 type CreateUsersArgs struct {
-	Id        int
+	Id        int `json:"id,omitempty" form:"id,omitempty"`
 	Name      string
 	UserNo    string
 	CreatedAt string

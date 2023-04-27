@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	"github.com/wvegtre/gogen-cli/output/easymoney/internal/app/database"
 	"github.com/wvegtre/gogen-cli/output/easymoney/internal/app/database/user"
@@ -28,10 +29,10 @@ func (s *UsersService) Get(ctx context.Context, id int64) (user.UsersModel, erro
 	return dbUsersModel, nil
 }
 
-func (s *UsersService) List(ctx context.Context, args ListUsersArgs) ([]user.UsersModel, error) {
+func (s *UsersService) List(ctx context.Context, args ListUsersArgs, options ...database.QueryOption) ([]user.UsersModel, error) {
 	var dbUsersModels []user.UsersModel
 	whereArgs := args.toDbQueryArgs()
-	err := s.DBOperation.Query(ctx, s.DBUsersService, whereArgs, &dbUsersModels)
+	err := s.DBOperation.Query(ctx, s.DBUsersService, whereArgs, &dbUsersModels, options...)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}

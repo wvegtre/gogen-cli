@@ -1,6 +1,13 @@
 package common
 
-import "time"
+import (
+	"strconv"
+	"time"
+
+	"github.com/go-playground/validator/v10"
+	"github.com/pkg/errors"
+	"github.com/wvegtre/gogen-cli/output/easymoney/api/common/consts"
+)
 
 type BasicResponseField struct {
 	CommField
@@ -35,4 +42,15 @@ type PaginationWithTotal struct {
 
 func DefaultPagination() Pagination {
 	return Pagination{}
+}
+
+func ParseAndValidateParamID(idStr string, validate *validator.Validate) (int64, error) {
+	if err := validate.Var(idStr, consts.ValidatorTagRequired); err != nil {
+		return 0, errors.WithStack(err)
+	}
+	id, err := strconv.ParseInt(idStr, 10, 0)
+	if err != nil {
+		return 0, errors.WithStack(err)
+	}
+	return id, nil
 }

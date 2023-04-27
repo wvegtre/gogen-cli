@@ -301,7 +301,6 @@ func (c *MySQLConverter) convertStructContent(
 		FieldMap: make(map[string]string),
 	}
 	structContent += "type " + structName + " struct {\n"
-	structContent += "gorm.Model\n"
 	for _, v := range item {
 		if c.isGormCommonFields(v.Tag) {
 			continue
@@ -316,7 +315,9 @@ func (c *MySQLConverter) convertStructContent(
 		structContent += fmt.Sprintf("%s %s%s\n",
 			filedContent, v.Tag, comment)
 		detail.FieldMap[v.ColumnName] = v.ColumnFieldName
-		detail.FieldRow = append(detail.FieldRow, filedContent)
+		detail.FieldRow = append(detail.FieldRow, filedContent+fmt.Sprintf(
+			"`json:\"%s,omitempty\" form:\"%s,omitempty\"`",
+			v.ColumnFieldName, v.ColumnFieldName))
 	}
 	structContent += tab(depth-1) + "}\n\n"
 	structContent += c.addTableNameFunc(tableRealName, structName) + "\n\n"

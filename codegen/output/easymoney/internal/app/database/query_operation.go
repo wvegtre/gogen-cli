@@ -3,8 +3,9 @@ package database
 import (
 	"context"
 
-	"github.com/pkg/errors"
 	"gorm.io/gorm"
+
+	"github.com/pkg/errors"
 )
 
 // CustomerQuery A query function for special scenarios which query function can't cover, you should support a customer query
@@ -25,7 +26,7 @@ func (o Operation) Query(
 		op(opArgs)
 	}
 	query := o.gdb.Table(s.GetTable())
-	query = opArgs.setArgsToQuery(query)
+	query = opArgs.parseArgsToQuery(query)
 	return o.query(ctx, query.Where(whereArgs), model)
 }
 

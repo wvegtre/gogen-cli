@@ -13,6 +13,6 @@ type APIRouter struct{}
 
 func (r APIRouter) Init() *router.Router {
 	parent := router.NewRouterWithPath(_relativePath)
-	parent.AddSubRouterGroup(user.APIRouter{}.Init())
+	parent.AddSubRouterGroup(user.UsersRouter{}.Init())
 	return parent
 }

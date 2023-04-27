@@ -31,7 +31,7 @@ type queryOptionArgs struct {
 	SelectFields    []string      // If empty, return all db fileds by default.
 }
 
-func (a queryOptionArgs) setArgsToQuery(query *gorm.DB) *gorm.DB {
+func (a queryOptionArgs) parseArgsToQuery(query *gorm.DB) *gorm.DB {
 	// return special feilds in result
 	if len(a.SelectFields) > 0 {
 		query = query.Select(a.SelectFields)
@@ -49,6 +49,14 @@ func (a queryOptionArgs) setArgsToQuery(query *gorm.DB) *gorm.DB {
 	if len(a.Orders) > 0 {
 		query = query.Order(strings.Join(a.Orders, ", "))
 	}
+
+	// 兼容没有赋值的情况
+	if a.Page == 0 {
+		a.Page = 1
+	}
+	if a.Limit == 0 {
+		a.Limit = 100
+	}
 	// limit result is required, or maybe span a full table, this is unexpect.
 	query = query.Limit(a.Limit).Offset((a.Page - 1) * a.Limit)
 
@@ -57,49 +65,49 @@ func (a queryOptionArgs) setArgsToQuery(query *gorm.DB) *gorm.DB {
 
 type QueryOption func(op *queryOptionArgs)
 
-func (o Operation) WithQueryLimit(limit int) QueryOption {
+func WithQueryLimit(limit int) QueryOption {
 	return func(op *queryOptionArgs) {
 		op.Limit = limit
 	}
 }
 
-func (o Operation) WithQueryPage(page int) QueryOption {
+func WithQueryPage(page int) QueryOption {
 	return func(op *queryOptionArgs) {
 		op.Page = page
 	}
 }
 
-func (o Operation) WithOrderDesc(orderBy string) QueryOption {
+func WithOrderDesc(orderBy string) QueryOption {
 	return func(op *queryOptionArgs) {
 		op.Orders = append(op.Orders, orderBy+" desc")
 	}
 }
 
-func (o Operation) WithOrderASC(orderBy string) QueryOption {
+func WithOrderASC(orderBy string) QueryOption {
 	return func(op *queryOptionArgs) {
 		op.Orders = append(op.Orders, orderBy+" asc")
 	}
 }
 
-func (o Operation) WithSelectFields(fileds []string) QueryOption {
+func WithSelectFields(fileds []string) QueryOption {
 	return func(op *queryOptionArgs) {
 		op.SelectFields = fileds
 	}
 }
 
-func (o Operation) WithQueryOrFilter(fileds []QueryFilter) QueryOption {
+func WithQueryOrFilter(fileds []QueryFilter) QueryOption {
 	return func(op *queryOptionArgs) {
 		op.OrFilterArgs = fileds
 	}
 }
 
-func (o Operation) WithQueryNotFilter(fileds []QueryFilter) QueryOption {
+func WithQueryNotFilter(fileds []QueryFilter) QueryOption {
 	return func(op *queryOptionArgs) {
 		op.NotFilterArgs = fileds
 	}
 }
 
-func (o Operation) WithQueryNotInFilter(fileds []QueryFilter) QueryOption {
+func WithQueryNotInFilter(fileds []QueryFilter) QueryOption {
 	return func(op *queryOptionArgs) {
 		op.NotInFilterArgs = fileds
 	}

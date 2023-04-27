@@ -22,7 +22,7 @@ func InitGinRouters() (*gin.Engine, error) {
 }
 
 func routers() *router.Router {
-	r := router.NewRouterWithPath("/echo-shopping")
+	r := router.NewRouterWithPath("/easy-money")
 	r.AddSubRouterGroup(v1.APIRouter{}.Init())
 	return r
 }
