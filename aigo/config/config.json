@@ -1,0 +1,24 @@
+{
+  "output": {
+    "dir": "/Users/hb.li/Documents/royce/wvegtre/",
+    "project_name": "chocolate"
+  },
+  "drivers": {
+    "mysql": {
+      "user_name": "royce-root",
+      "ip": "81.68.104.197",
+      "port": "3306",
+      "database": "chocolate"
+    }
+  },
+  "template_paths": {
+    "basic": "./templates",
+    "init_api_router": "/init/api",
+    "add_v1_api_router": "/init/api/v1",
+    "api_parameter": "/api/v1/parameter",
+    "api_routers": "/api/v1/routers",
+    "internal_service": "/internal/app/services",
+    "internal_database": "/internal/app/database/tables"
+  },
+  "tables": []
+}
