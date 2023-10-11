@@ -1,7 +1,5 @@
 package tables
 
-import "time"
-
 type {{.TableName}}Model struct {
 {{range $i, $v := .StructFields}}{{$v}}
 {{end}}

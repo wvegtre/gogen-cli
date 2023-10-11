@@ -144,12 +144,13 @@ func replaceFileContent(writeFile string, oldKeyword, newKeyword string) error {
 
 func fieldTypeMapping(fieldType string) string {
 	m := map[string]string{
-		"datetime": "time.Time",
-		"text":     "string",
-		"varchar":  "string",
-		"decimal":  "float64",
-		"long":     "int64",
-		"int":      "int",
+		"datetime":  "time.Time",
+		"timestamp": "int64",
+		"text":      "string",
+		"varchar":   "string",
+		"decimal":   "float64",
+		"long":      "int64",
+		"int":       "int",
 	}
 	if v, ok := m[fieldType]; ok {
 		return v

@@ -9,7 +9,7 @@ import (
 type Router struct {
 	HttpMethod     string          `validate:"required"`
 	HandleFunc     gin.HandlerFunc `validate:"required"`
-	RelativePath   string          `validate:"required"`
+	RelativePath   string
 	SubRouterGroup []*Router
 }
 
