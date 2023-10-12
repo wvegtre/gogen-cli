@@ -8,12 +8,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"gorm.io/gorm"
 )
 
-func InitGinRouters(gdb *gorm.DB) (*gin.Engine, error) {
+func InitGinRouters() (*gin.Engine, error) {
 	e := gin.Default()
-	r := routers(gdb)
+	r := routers()
 	for _, subRouter := range r.SubRouterGroup {
 		rg := e.Group(r.RelativePath)
 		if err := includeGinRoute(rg, subRouter); err != nil {
@@ -23,11 +22,9 @@ func InitGinRouters(gdb *gorm.DB) (*gin.Engine, error) {
 	return e, nil
 }
 
-func routers(gdb *gorm.DB) *router.Router {
+func routers() *router.Router {
 	r := router.NewRouterWithPath("/{{.APIPrefix}}")
-	r.AddSubRouterGroup(v1.APIRouter{
-		GDB: gdb,
-	}.Init())
+	r.AddSubRouterGroup(v1.APIRouter{}.Init())
 	return r
 }
 

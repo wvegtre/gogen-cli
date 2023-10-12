@@ -12,26 +12,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
-	"gorm.io/gorm"
 )
 
-const (
-	_relativePath = "/{{.RouterPrefix}}"
-)
-
-type {{.TableName}}APIRouter struct {
-	GDB *gorm.DB
-}
+type {{.TableName}}APIRouter struct {}
 
 func (r {{.TableName}}APIRouter) Init() *router.Router {
 
 	h := {{.TableName}}APIHandler{
-		Service: services.New{{.TableName}}Service(r.GDB),
+		Service: services.New{{.TableName}}Service(),
 	}
-	parent := router.NewRouterWithPath(_relativePath)
-	parent.AddSubRouterGroup(router.NewRouter(http.MethodGet, "", h.List{{.TableName}}s))
+	parent := router.NewRouterWithPath("/{{.RouterPrefix}}")
+	parent.AddSubRouterGroup(router.NewRouter(http.MethodGet, "", h.List{{.TableName}}))
 	parent.AddSubRouterGroup(router.NewRouter(http.MethodGet, ":id", h.Get{{.TableName}}))
-	parent.AddSubRouterGroup(router.NewRouter(http.MethodPost, ":id", h.Create{{.TableName}}))
+	parent.AddSubRouterGroup(router.NewRouter(http.MethodPost, "", h.Create{{.TableName}}))
 	parent.AddSubRouterGroup(router.NewRouter(http.MethodPatch, ":id", h.Update{{.TableName}}ByID))
 	parent.AddSubRouterGroup(router.NewRouter(http.MethodDelete, ":id", h.Delete{{.TableName}}ByID))
 	return parent
@@ -59,11 +52,11 @@ func (h {{.TableName}}APIHandler) Get{{.TableName}}(c *gin.Context) {
 	common.ResponseOK(c, {{.TableNameLow}}Detail)
 }
 
-func (h {{.TableName}}APIHandler) List{{.TableName}}s(c *gin.Context) {
+func (h {{.TableName}}APIHandler) List{{.TableName}}(c *gin.Context) {
 	ctx := c.Request.Context()
 
-	var args parameter.List{{.TableName}}sArgs
-	if err := c.ShouldBindQuery(args); err != nil {
+	var args parameter.List{{.TableName}}Args
+	if err := c.ShouldBindQuery(&args); err != nil {
 		common.ResponseError(c, err)
 		return
 	}

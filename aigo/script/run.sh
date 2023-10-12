@@ -7,8 +7,6 @@ go build;
 rm -rf aigo;
 
 cd "$2" || exit
-rm -rf go.mod
-go mod init "$3"
 echo "go mod tidy"
 go mod tidy
 echo "go fmt"

@@ -3,10 +3,10 @@ Port = ":8081"
 
 
 [Database]
-[MySQL]
-User = "your sql name"
-Host = "your host"
+[Database.MySQL]
+User = "royce-root"
+Host = "81.68.104.197"
 Port = 3306
-DB = "your sqldb"
+DB = "chocolate"
 MaxLifetimeSecond = 100
 MaxIdleConns = 10

@@ -2,11 +2,11 @@ package services
 
 import (
 	"context"
-    "time"
 
 	"gen-templates/api/common/consts"
 	"gen-templates/internal/app/database"
 	"gen-templates/internal/app/database/tables"
+    "chocolate/middleware/server_ctx"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/pkg/errors"
@@ -18,9 +18,9 @@ type {{.TableName}}Service struct {
 	validator *validator.Validate
 }
 
-func New{{.TableName}}Service(gdb *gorm.DB) {{.TableName}}Service {
+func New{{.TableName}}Service() {{.TableName}}Service {
 	return {{.TableName}}Service{
-		gdb: gdb,
+		gdb: server_ctx.Get().ServerComponents.GDB,
 		validator: validator.New(),
 	}
 }
@@ -34,7 +34,7 @@ func (s {{.TableName}}Service) GetByID(ctx context.Context, id int64) (*{{.Table
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return convertToServiceModel(db{{.TableName}}), nil
+	return {{.TableName}}Model{}.convertFromDBModel(db{{.TableName}}), nil
 }
 
 func (s {{.TableName}}Service) List(ctx context.Context, args List{{.TableName}}Args, page, limit int) ({{.TableName}}Models, error) {
@@ -60,7 +60,7 @@ func (s {{.TableName}}Service) List(ctx context.Context, args List{{.TableName}}
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return convertToServiceModels(db{{.TableName}}s), nil
+	return {{.TableName}}Models{}.convertFromDBModels(db{{.TableName}}s), nil
 }
 
 func (s {{.TableName}}Service) Create(ctx context.Context, args Create{{.TableName}}Args) (*{{.TableName}}Model, error) {
@@ -72,7 +72,7 @@ func (s {{.TableName}}Service) Create(ctx context.Context, args Create{{.TableNa
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return convertToServiceModel(createRow), nil
+	return {{.TableName}}Model{}.convertFromDBModel(createRow), nil
 }
 
 func (s {{.TableName}}Service) UpdateByID(ctx context.Context, id int64, args Update{{.TableName}}Args) (*{{.TableName}}Model, error) {
@@ -90,7 +90,7 @@ func (s {{.TableName}}Service) UpdateByID(ctx context.Context, id int64, args Up
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return convertToServiceModel(updateRow), nil
+	return {{.TableName}}Model{}.convertFromDBModel(updateRow), nil
 }
 
 func (s {{.TableName}}Service) DeleteByID(ctx context.Context, id int64) (*{{.TableName}}Model, error) {
@@ -102,7 +102,7 @@ func (s {{.TableName}}Service) DeleteByID(ctx context.Context, id int64) (*{{.Ta
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
-	return convertToServiceModel(db{{.TableName}}), nil
+	return {{.TableName}}Model{}.convertFromDBModel(db{{.TableName}}), nil
 }
 
 type {{.TableName}}Models []*{{.TableName}}Model
@@ -110,21 +110,21 @@ type {{.TableName}}Model struct {
     {{range $i, $v := .ModelFields}}{{$v}}
     {{end}}}
 
-func convertToServiceModels(dbModels []tables.{{.TableName}}Model) {{.TableName}}Models {
-	var serviceModels {{.TableName}}Models
+func (ms {{.TableName}}Models) convertFromDBModels(dbModels []tables.{{.TableName}}Model) {{.TableName}}Models {
+	serviceModels := make({{.TableName}}Models, 0)
 	for _, v := range dbModels {
-		serviceModels = append(serviceModels, convertToServiceModel(v))
+		serviceModels = append(serviceModels, {{.TableName}}Model{}.convertFromDBModel(v))
 	}
 	return serviceModels
 }
 
-func convertToServiceModel(dbModel tables.{{.TableName}}Model) *{{.TableName}}Model {
+func (m {{.TableName}}Model) convertFromDBModel(dbModel tables.{{.TableName}}Model) *{{.TableName}}Model {
 	return &{{.TableName}}Model{
 		{{range $i, $v := .ModelConvert}} {{$v}}: dbModel.{{$v}},
         {{end}}}
 }
 
-type List{{.TableName}}sArgs struct {
+type List{{.TableName}}Args struct {
     {{range $i, $v := .ListArgsRow}}{{$v}}
     {{end}}}
 
@@ -141,8 +141,7 @@ type Create{{.TableName}}Args struct {
 func (a Create{{.TableName}}Args) toDBCreateRow() tables.{{.TableName}}Model {
 	return tables.{{.TableName}}Model{
 		{{range $i, $v := .CreateArgsConvert}} {{$v}}: a.{{$v}},
-        {{end}}CreatedAt: 	time.Now().UTC(),
-        UpdatedAt: 	time.Now().UTC(),
+        {{end}}
 	}
 }
 
@@ -153,6 +152,6 @@ type Update{{.TableName}}Args struct {
 func (a Update{{.TableName}}Args) toDBUpdateRow() tables.{{.TableName}}Model {
 	return tables.{{.TableName}}Model{
 	    {{range $i, $v := .UpdateArgsConvert}} {{$v}}: a.{{$v}},
-        {{end}}UpdatedAt: 	time.Now().UTC(),
+	    {{end}}
 	}
 }
