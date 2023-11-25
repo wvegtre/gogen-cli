@@ -1,9 +1,8 @@
 package main
 
 import (
-	"log"
-
 	"chocolate/init/api"
+	_ "chocolate/middleware/log"
 	"chocolate/middleware/server_ctx"
 )
 
@@ -12,7 +11,7 @@ func main() {
 	// 1.创建路由
 	r, err := api.InitGinRouters()
 	if err != nil {
-		log.Panic("router init error, ", err)
+	   panic(err)
 	}
 	// Run("里面不指定端口号默认为8080")
 	err = r.Run(server_ctx.Get().ServerConfigs.Server.Port)

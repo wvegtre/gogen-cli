@@ -85,7 +85,7 @@ func ReplaceFileDir(dir, projectName string) error {
 			}
 			continue
 		}
-		if !strings.HasSuffix(f.Name(), ".go") {
+		if !strings.HasSuffix(f.Name(), ".go") && !strings.HasSuffix(f.Name(), ".mod") {
 			log.Println(aurora.Yellow("ReplaceFileDir skip file " + dir + "/" + f.Name()))
 			continue
 		}

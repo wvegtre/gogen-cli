@@ -5,8 +5,8 @@
   },
   "drivers": {
     "mysql": {
-      "user_name": "royce-root",
-      "ip": "81.68.104.197",
+      "user_name": "royce",
+      "ip": "129.226.220.183",
       "port": "3306",
       "database": "chocolate"
     }

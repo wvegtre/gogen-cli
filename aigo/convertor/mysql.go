@@ -27,7 +27,7 @@ func NewMySQLConvertor(projectName, tableName string, fields model.TableFields, 
 
 func (c MySQLConvertor) GenAPIParameter(tplFile, writeFile string) error {
 	var listArgsRow []string
-	var listArgsConvert []string
+	var structNames []string
 	for _, v := range c.fields {
 		structName := SnakeToCamel(v.FieldName)
 		structFiled := fmt.Sprintf("%s %s `json:%s` ",
@@ -36,14 +36,16 @@ func (c MySQLConvertor) GenAPIParameter(tplFile, writeFile string) error {
 			structFiled += `// ` + v.FieldDescription
 		}
 		listArgsRow = append(listArgsRow, structFiled)
+		structNames = append(structNames, structName)
 	}
 	err := ParseTPLAndWrite(c.projectName, tplFile, writeFile, struct {
-		TableName       string
-		ListArgsRow     []string
-		ListArgsConvert []string
+		TableName   string
+		ListArgsRow []string
+		StructNames []string
 	}{
-		TableName:       SnakeToCamel(c.tableName),
-		ListArgsConvert: listArgsConvert,
+		TableName:   SnakeToCamel(c.tableName),
+		ListArgsRow: listArgsRow,
+		StructNames: structNames,
 	})
 	if err != nil {
 		return errors.WithStack(err)

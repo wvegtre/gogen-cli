@@ -86,6 +86,12 @@ func (m *MysqlDetector) GetTableFields(ctx context.Context, tableName string) (m
 		if err != nil {
 			return nil, errors.WithStack(err)
 		}
+		if field.FieldType == "tinyint" {
+			field.FieldType = "int"
+		}
+		if field.FieldType == "json" {
+			field.FieldType = "string"
+		}
 		fields = append(fields, field)
 	}
 	return fields, nil

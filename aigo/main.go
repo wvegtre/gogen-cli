@@ -107,7 +107,7 @@ func completeDBConnectConfig(c *config.DBAuth) *config.DBAuth {
 		// TODO 本地调试
 		//fmt.Println("!!! exit because password required")
 		//os.Exit(0)
-		c.Password = "123456"
+		c.Password = "Royce1101."
 	}
 	return c
 }

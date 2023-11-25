@@ -4,8 +4,8 @@ Port = ":8081"
 
 [Database]
 [Database.MySQL]
-User = "royce-root"
-Host = "81.68.104.197"
+User = "royce"
+Host = "129.226.220.183"
 Port = 3306
 DB = "chocolate"
 MaxLifetimeSecond = 100

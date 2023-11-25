@@ -1,20 +1,19 @@
 package common
 
 import (
+	"context"
 	"net/http"
 
+	"gen-templates/middleware/biz_ctx"
+	"gen-templates/middleware/log"
+
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
-func Response(c *gin.Context, httpStatus, code int, message string, data interface{}) {
-	c.JSON(httpStatus, gin.H{
-		"code":    code,
-		"message": message,
-		"data":    data,
-	})
-}
-
-func ResponseOK(c *gin.Context, data interface{}) {
+func ResponseOK(c *gin.Context, ctx context.Context, data interface{}) {
+	ctx = biz_ctx.AppendFieldsToContext(ctx, "uri", c.Request.RequestURI)
+	log.Get().InfoCtx(ctx, "[API Response] Succeed.")
 	c.JSON(http.StatusOK, gin.H{
 		"code":    20000,
 		"message": "succeed",
@@ -22,15 +21,21 @@ func ResponseOK(c *gin.Context, data interface{}) {
 	})
 }
 
-func ResponseCreated(c *gin.Context, data interface{}) {
+func ResponseCreated(c *gin.Context, ctx context.Context, data interface{}) {
+	ctx = biz_ctx.AppendFieldsToContext(ctx, "uri", c.Request.RequestURI)
+	log.Get().InfoCtx(ctx, "[API Response] Created.")
 	c.JSON(http.StatusCreated, gin.H{
-		"code":   20100,
-		"messge": "create succeed",
-		"data":   data,
+		"code":    20100,
+		"message": "create succeed",
+		"data":    data,
 	})
 }
 
-func ResponseError(c *gin.Context, err error) {
+func ResponseError(c *gin.Context, ctx context.Context, err error) {
+	ctx = biz_ctx.AppendFieldsToContext(ctx, "uri", c.Request.RequestURI)
+	log.Get().ErrorCtx(ctx, "[API Response] Something error",
+		zap.Error(err),
+	)
 	c.JSON(http.StatusOK, gin.H{
 		"code":    500,
 		"message": "internal error",

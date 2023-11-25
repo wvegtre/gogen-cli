@@ -11,19 +11,18 @@ type List{{.TableName}}Args struct {
 	common.DefaultPaginationArgs
 }
 
-func (a List{{.TableName}}Args) SetDefaultPagination() List{{.TableName}}Args {
+func (a *List{{.TableName}}Args) SetDefaultPagination() {
 	if a.Page == 0 {
 		a.Page = 1
 	}
 	if a.Size == 0 {
 		a.Size = 100
 	}
-	return a
 }
 
-func (a List{{.TableName}}Args) ConvertToServiceArgs() services.List{{.TableName}}Args {
+func (a *List{{.TableName}}Args) ConvertToServiceArgs() services.List{{.TableName}}Args {
 	return services.List{{.TableName}}Args{
-	   {{range $i, $v := .ListArgsConvert}} {{$v}}: a.{{$v}},
+	   {{range $i, $v := .StructNames}} {{$v}}: a.{{$v}},
        {{end}}
 	}
 }
